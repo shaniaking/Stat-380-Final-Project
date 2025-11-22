@@ -1,0 +1,60 @@
+---
+title: "STAT 380 Final Project"
+format: html
+---
+
+### Data Cleaning
+```{r}
+library(dplyr)
+library(readr)
+# Import data
+data <- read.csv("~/Desktop/R Studio (Stat 184)/Shark Tank US dataset.csv")
+
+# Remove Unwanted Columns
+data <- data %>%
+  select(Startup.Name, Industry, Pitchers.Gender, Pitchers.State, Multiple.Entrepreneurs, Original.Ask.Amount, Original.Offered.Equity, Valuation.Requested, Got.Deal, Total.Deal.Amount, Total.Deal.Equity, Deal.Valuation, Number.of.Sharks.in.Deal, Investment.Amount.Per.Shark, Equity.Per.Shark, Royalty.Deal)
+
+# Fill in NAs
+data <- data %>%
+  mutate(
+    Total.Deal.Amount = if_else(Got.Deal == 0, 0, Total.Deal.Amount),
+    Total.Deal.Equity  = if_else(Got.Deal == 0, 0, Total.Deal.Equity),
+    Deal.Valuation  = if_else(Got.Deal == 0, 0, Deal.Valuation),
+    Number.of.Sharks.in.Deal  = if_else(Got.Deal == 0, 0, Number.of.Sharks.in.Deal),
+    Investment.Amount.Per.Shark  = if_else(Got.Deal == 0, 0, Investment.Amount.Per.Shark),
+    Equity.Per.Shark  = if_else(Got.Deal == 0, 0, Equity.Per.Shark),
+    Royalty.Deal  = if_else(Royalty.Deal == "", "no", "yes")
+  )
+```
+
+### Random Forest
+## Research Question: Can we predict whether a pitch will receive a deal or not using other variables in the dataset?
+
+```{r}
+# Load packages
+library(caret)
+library(randomForest)
+
+# Train/test split
+set.seed(380) # for reproducibility
+train_idx <- createDataPartition(data$Got.Deal, p=0.8, list=F)
+train_data <- data[train_idx, ]
+train_data$Multiple.Entrepreneurs <- NULL
+test_data <- data[-train_idx, ]
+
+# Fit RF Model
+rf <- randomForest(as.factor(Got.Deal) ~., data=train_data, ntree=500, mtry=3, importance=TRUE)
+
+# Prediction on test data
+pred_prob <- predict(rf, newdata=test_data, type="prob") # predicted probabilities
+pred_surv <- predict(rf, newdata=test_data, type="response") #predicted class
+table(pred_surv, test_data$Got.Deal) # confusion matrix
+mean(pred_surv==test_data$Got.Deal) # accuracy
+
+# Variable Importance
+
+varImpPlot(rf, n.var=5, main="Variable Importance") # Importance Plot 
+importance(rf)
+```
+
+
