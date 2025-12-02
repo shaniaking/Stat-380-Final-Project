@@ -31,30 +31,24 @@ data <- data %>%
 ## Research Question: Can we predict whether a pitch will receive a deal or not using other variables in the dataset?
 
 ```{r}
+# Remove leakage features
+data_to_train <- data %>%
+  select(
+    Industry, Pitchers.Gender, Pitchers.State, Original.Ask.Amount, Original.Offered.Equity, Valuation.Requested, Got.Deal, -Total.Deal.Amount, -Total.Deal.Equity, -Deal.Valuation, -Number.of.Sharks.in.Deal, -Investment.Amount.Per.Shark, -Equity.Per.Shark, -Royalty.Deal
+  )
+
 # Load packages
 library(caret)
 library(randomForest)
 
 # Train/test split
 set.seed(380) # for reproducibility
-train_idx <- createDataPartition(data$Got.Deal, p=0.8, list=F)
-train_data <- data[train_idx, ]
-train_data$Multiple.Entrepreneurs <- NULL
-test_data <- data[-train_idx, ]
+train_idx <- createDataPartition(data_to_train$Got.Deal, p=0.8, list=F)
+train_data <- data_to_train[train_idx, ]
+test_data <- data_to_train[-train_idx, ]
 
 # Fit RF Model
 rf <- randomForest(as.factor(Got.Deal) ~., data=train_data, ntree=500, mtry=3, importance=TRUE)
 
 # Prediction on test data
-pred_prob <- predict(rf, newdata=test_data, type="prob") # predicted probabilities
-pred_surv <- predict(rf, newdata=test_data, type="response") #predicted class
-table(pred_surv, test_data$Got.Deal) # confusion matrix
-mean(pred_surv==test_data$Got.Deal) # accuracy
-
-# Variable Importance
-
-varImpPlot(rf, n.var=5, main="Variable Importance") # Importance Plot 
-importance(rf)
-```
-
-
+pred_prob <- predict(rf, newdata=test_data, type="prob") 
