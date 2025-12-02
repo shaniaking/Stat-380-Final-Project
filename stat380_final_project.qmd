@@ -51,4 +51,16 @@ test_data <- data_to_train[-train_idx, ]
 rf <- randomForest(as.factor(Got.Deal) ~., data=train_data, ntree=500, mtry=3, importance=TRUE)
 
 # Prediction on test data
-pred_prob <- predict(rf, newdata=test_data, type="prob") 
+pred_prob <- predict(rf, newdata=test_data, type="prob") # predicted probabilities
+pred_surv <- predict(rf, newdata=test_data, type="response") #predicted class
+
+table(pred_surv, test_data$Got.Deal) # confusion matrix
+mean(pred_surv==test_data$Got.Deal) # accuracy
+
+# Variable Importance
+
+varImpPlot(rf, n.var=5, main="Variable Importance") # Importance Plot 
+importance(rf)
+```
+
+
